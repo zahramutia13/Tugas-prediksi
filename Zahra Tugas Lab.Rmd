@@ -1,0 +1,56 @@
+---
+title: "Tugas Prediksi"
+author: "Zahra Mutia Salsabila"
+output: html_document
+---
+
+# Pendahuluan
+
+Proyek ini bertujuan untuk membangun model prediktif guna mengidentifikasi bagaimana seseorang melakukan latihan angkat beban. Data dikumpulkan menggunakan akselerometer dari 6 peserta, dan target klasifikasi adalah variabel `classe`. Model yang digunakan dalam proyek ini adalah Random Forest.
+
+## 1. Memuat dan Menyiapkan Data
+
+```r
+library(caret)
+library(randomForest)
+
+set.seed(12345)
+
+# Unduh dan baca data
+trainingUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testingUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+training <- read.csv(url(trainingUrl), na.strings = c("NA", "#DIV/0!", ""))
+testing <- read.csv(url(testingUrl), na.strings = c("NA", "#DIV/0!", ""))
+
+# Hapus kolom dengan banyak nilai NA
+training <- training[, colSums(is.na(training)) == 0]
+
+# Hapus kolom non-predictor (metadata)
+training <- training[, -c(1:7)]
+testing <- testing[, names(training)[-ncol(training)]]
+
+## 2. Pemisahan Data Latih dan Validasi
+
+inTrain <- createDataPartition(training$classe, p = 0.7, list = FALSE)
+trainSet <- training[inTrain, ]
+valSet <- training[-inTrain, ]
+
+## 3. Pembangunan Model
+
+control <- trainControl(method = "cv", number = 5)
+modelFit <- train(classe ~ ., data = trainSet, method = "rf", trControl = control)
+
+## 4. Evaluasi Model
+
+predictions <- predict(modelFit, valSet)
+confusionMatrix(predictions, valSet$classe)
+
+## 5. Prediksi pada Data Uji
+
+finalPredictions <- predict(modelFit, testing)
+finalPredictions
+
+# Kesimpulan
+
+Model Random Forest yang dibangun menghasilkan akurasi yang tinggi terhadap data validasi. Data telah dibersihkan dan diproses dengan hati-hati untuk memastikan kualitas input. Validasi silang juga telah digunakan untuk menghindari overfitting. Prediksi terhadap 20 data uji telah berhasil dilakukan, dan hasilnya siap dikirimkan ke Coursera Quiz.
